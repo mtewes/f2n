@@ -32,6 +32,7 @@ import astropy.io.fits
 import matplotlib.pyplot as plt
 import matplotlib.cm
 import matplotlib.colors
+import matplotlib.patches
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class SkyImage(object):
         return "SkyImage{}".format(self.data.shape)
     
 
-    def set_auto_z_scale(full_sample_limit = 10000, nsig=3.0):
+    def set_auto_z_scale(self, full_sample_limit = 10000, nsig=5.0):
         """Automatic z-scale determination"""
    
         #if a.size > full_sample_limit :
@@ -68,7 +69,7 @@ class SkyImage(object):
         #else :
     
         stata = self.data[:]
-        stata.shape = stata.size # Flattening the array
+        #stata.shape = (stata.size,) # Flattening the array
 
         std = stdmad(stata)
         med = np.median(stata)
@@ -90,7 +91,7 @@ class SkyImage(object):
 
 
 
-def draw_sky_image(si, ax, **kwargs):
+def draw_sky_image(ax, si, **kwargs):
     """Use imshow to draw a SkyImage to some axes
     
     """
@@ -101,7 +102,7 @@ def draw_sky_image(si, ax, **kwargs):
 
 
 
-def draw_mask(si, ax, **kwargs):
+def draw_mask(ax, si, **kwargs):
     """Uses imshow to draw a binary mask to some axes
     
     """
@@ -116,7 +117,40 @@ def draw_mask(si, ax, **kwargs):
     return ax.imshow(si.data, vmin=0, vmax=1, extent=si.extent, cmap=mask_cmap, norm=mask_norm, **imshow_kwargs)
     
 
-def plot(img_array, mask_array=None, ax=None, filepath=None, figsize=None, scale=1):
+def draw_ellipse(ax, x, y, a=5, b=None, angle=None, **kwargs):
+    """Draws an ellipse patch on the axes
+    
+    """
+    if b is None:
+        b = a
+    if angle is None:
+        angle = 0
+    
+    ellipse_kwargs = {"fill":False, "edgecolor":"red", "linewidth":2, "clip_box":ax.bbox}
+    ellipse_kwargs.update(kwargs)
+    
+    ellipse = matplotlib.patches.Ellipse((x, y), width=2*a, height=2*b, angle=angle, **ellipse_kwargs)
+    
+    return ax.add_artist(ellipse)
+
+def draw_g_ellipse(ax, x, y, g1, g2, sigma, **kwargs):
+    """Draws an ellipse defined by the "reduced shear" following GalSim nomenclature.
+    
+    Parameters
+    ----------
+    sigma : float
+        sigma is defined as (a+b)/2
+    
+    """
+    angle = 0.5*np.arctan2(g2, g1) * 180.0/np.pi
+    g = np.hypot(g1, g2)
+    a = (g + 1.0) * sigma
+    b = (1.0 - g) * sigma
+    return draw_ellipse(ax, x, y, a, b, angle, **kwargs)
+
+
+
+def plot(img_array, z1=None, z2=None, mask_array=None, ax=None, filepath=None, figsize=None, scale=1):
     """Wraps some of the functionality into a single convenient function 
     
     Parameters
@@ -150,13 +184,23 @@ def plot(img_array, mask_array=None, ax=None, filepath=None, figsize=None, scale
         ax = fig.add_subplot(111)
     
     img_si = SkyImage(img_array)
-    draw_sky_image(img_si, ax)
+    img_si.set_auto_z_scale()
+    draw_sky_image(ax, img_si)
     
     if mask_array is not None:
         mask_si = SkyImage(mask_array)
-        draw_mask(mask_si, ax)
-        
-        
+        draw_mask(ax, mask_si)
+    
+    draw_ellipse(ax, 40, 60, a=5, b=10)
+    
+    sigma = 0.1
+    draw_g_ellipse(ax, -0.5, 0.0, -0.5, 0.0, sigma)
+    draw_g_ellipse(ax, 0.5, 0.0, 0.5, 0.0, sigma)
+    draw_g_ellipse(ax, 0.0, 0.5, 0.0, 0.5, sigma)
+    draw_g_ellipse(ax, 0.0, -0.5, 0.0, -0.5, sigma)
+    
+    
+           
     if makefig:
         if filepath is None:
             plt.show()
