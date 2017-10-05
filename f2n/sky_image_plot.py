@@ -119,6 +119,21 @@ def draw_mask(si, ax, **kwargs):
 def plot(img_array, mask_array=None, ax=None, filepath=None, figsize=None, scale=1):
     """Wraps some of the functionality into a single convenient function 
     
+    Parameters
+    ----------
+    img_array : numpy array
+        A 2D numpy array containing the image
+    mask_array : numpy array
+        A 2D numpy array containing a boolean mask (1 means True means masked)
+    ax : Matplotlib Axes
+        An Axes object on which to plot the image.
+        If given, the keywords related to the figure creation are ignored
+    filepath : string
+        Path to a file in which to save the figure. If Neither ax nor fielpath is specified, the figure is shown
+        interactively.
+    scale : float
+        A scaling for the display of the image
+    
     """
     
     if ax is None:
@@ -128,7 +143,7 @@ def plot(img_array, mask_array=None, ax=None, filepath=None, figsize=None, scale
         
     if makefig:
         
-        dpi = 100.0 
+        dpi = 72.0 
         figsize = float(scale) * np.array(img_array.shape)/dpi
         
         fig = plt.figure(figsize=figsize)
@@ -143,8 +158,11 @@ def plot(img_array, mask_array=None, ax=None, filepath=None, figsize=None, scale
         
         
     if makefig:
-        logger.info("Writing image to '{}'".format(filepath))
-        fig.savefig(filepath, bbox_inches='tight')
+        if filepath is None:
+            plt.show()
+        else:
+            logger.info("Writing image to '{}'".format(filepath))
+            fig.savefig(filepath, bbox_inches='tight')
         plt.close(fig)
  
 
