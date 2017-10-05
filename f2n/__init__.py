@@ -1,8 +1,9 @@
 """
 f2n: FITS to net, in python
+https://github.com/mtewes/f2n
 """
 
 __license__ = "GPLv3"
-__all__=["f2n"]
+__all__=[""]
 
-from .f2n import f2n
+from .sky_image_plot import *
