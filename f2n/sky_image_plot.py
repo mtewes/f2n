@@ -149,6 +149,31 @@ def draw_g_ellipse(ax, x, y, g1, g2, sigma, **kwargs):
     return draw_ellipse(ax, x, y, a, b, angle, **kwargs)
 
 
+def draw_g_ellipses(ax, cat, x="x", y="y", g1="g1", g2="g2", sigma="sigma", **kwargs):
+    """Draws ellipses corresponding to a "catalog" (that is an astropy table or a list of dicts) of sources
+    
+    Parameters
+    ----------
+    cat : astropy table or list of dicts
+        The "catalog", must be iterable like a list, with each element behaving like a dict.
+    x : str
+        The key of the field (or the column name) containing the x position
+    y
+        idem
+    g1 : float
+         The g1 component of the reduced shear defining the ellipse to draw
+    g2
+        idem
+    sigma : float
+        defined as (a+b)/2 of the ellipses to draw
+    
+    """
+    for row in cat:
+        draw_g_ellipse(ax, row[x], row[y], row[g1], row[g2], row[sigma], **kwargs)
+    
+    
+    To do: modify plot so to make it possible to add draws on it.
+    Maybe an object SimplePlot, with methods.
 
 def plot(img_array, z1=None, z2=None, mask_array=None, ax=None, filepath=None, figsize=None, scale=1):
     """Wraps some of the functionality into a single convenient function 
