@@ -43,22 +43,38 @@ class SkyImage(object):
     
     """
     
-    def __init__(self, data):
+    def __init__(self, data, z1=None, z2=None):
         """
         
         """
                
         self.data = data
-        self.z1 = np.min(data)
-        self.z2 = np.max(data)
-        
         self.extent = (0, self.data.shape[0], 0, self.data.shape[1])
+        self.set_z(z1, z2)
         
-        logger.debug("Created {}".format(str(self)))
+        logger.info("Created {}".format(str(self)))
 
     def __str__(self):
         return "SkyImage{}".format(self.data.shape)
     
+
+    def set_z(self, z1, z2):
+        
+        if z1 is None:
+            self.z1 = np.min(data)
+            logger.info("Set z1 to minimum value: {}".format(self.z1))
+        else:
+            self.z1 = z1
+        if z2 is None:
+            self.z2 = np.max(data)
+            logger.info("Set z2 to maximum value: {}".format(self.z2))
+        else:
+            self.z2 = z2
+        
+        autolist = ["Auto", "auto"]
+        if (self.z1 in autolist) or (self.z2 in autolist):
+            self.set_auto_z_scale()
+            
 
     def set_auto_z_scale(self, full_sample_limit = 10000, nsig=5.0):
         """Automatic z-scale determination"""
@@ -87,7 +103,7 @@ class SkyImage(object):
         
         self.z2 = np.max(stata)
         
-        logger.debug("Set zscale from {} to {}".format(self.z1, self.z2))
+        logger.info("Set automatic zscale from {} to {}".format(self.z1, self.z2))
 
 
 
@@ -150,7 +166,7 @@ def draw_g_ellipse(ax, x, y, g1, g2, sigma, **kwargs):
 
 
 def draw_g_ellipses(ax, cat, x="x", y="y", g1="g1", g2="g2", sigma="sigma", **kwargs):
-    """Draws ellipses corresponding to a "catalog" (that is an astropy table or a list of dicts) of sources
+    """Draws ellipses from a catalog (that is an astropy table or a list of dicts) of sources
     
     Parameters
     ----------
@@ -171,69 +187,136 @@ def draw_g_ellipses(ax, cat, x="x", y="y", g1="g1", g2="g2", sigma="sigma", **kw
     for row in cat:
         draw_g_ellipse(ax, row[x], row[y], row[g1], row[g2], row[sigma], **kwargs)
     
-    
-    To do: modify plot so to make it possible to add draws on it.
-    Maybe an object SimplePlot, with methods.
 
-def plot(img_array, z1=None, z2=None, mask_array=None, ax=None, filepath=None, figsize=None, scale=1):
-    """Wraps some of the functionality into a single convenient function 
-    
-    Parameters
-    ----------
-    img_array : numpy array
-        A 2D numpy array containing the image
-    mask_array : numpy array
-        A 2D numpy array containing a boolean mask (1 means True means masked)
-    ax : Matplotlib Axes
-        An Axes object on which to plot the image.
-        If given, the keywords related to the figure creation are ignored
-    filepath : string
-        Path to a file in which to save the figure. If Neither ax nor fielpath is specified, the figure is shown
-        interactively.
-    scale : float
-        A scaling for the display of the image
+def annotate(ax, cat, x="x", y="y", text="Hello", **kwargs):
+    """Annotates the positions (x, y) from a catalog
     
     """
     
-    if ax is None:
-        makefig = True
-    else:
-        makefig = False
+    annotate_kwargs = {"horizontalalignment":"left", "verticalalignment":"top", "color":"red"}
+    annotate_kwargs.update(**kwargs)
+    
+    for row in cat:        
+        rowtext = text.format(row=row)
+        ax.annotate(rowtext,
+            xy=(row[x], row[y]),
+            xytext=(0, 0),
+            textcoords='offset points',
+            **annotate_kwargs
+            )
+
+
+class SimpleFigure(object):
+    """A simple plot made from scratch. If you have only one image, and want one matplotlib figure, this should do it.
+    
+    """
+    
+    def __init__(self, img_array, z1=None, z2=None, scale=1):
+        """
+
+        Parameters
+        ----------
+        img_array : numpy array
+            A 2D numpy array containing the image
+
+        scale : float
+            A scaling for the display of the image
+
+
+        """
         
-    if makefig:
+        self.si = SkyImage(img_array, z1, z2)
         
-        dpi = 72.0 
-        figsize = float(scale) * np.array(img_array.shape)/dpi
+        self.dpi = 72
+        self.figsize = float(scale) * np.array(img_array.shape)/self.dpi
         
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111)
+        self.fig = plt.figure(figsize=self.figsize)
+        self.ax = self.fig.add_subplot(111)
+        
+        draw_sky_image(self.ax, self.si)
+        
+
+    def __str__(self):
+        return "SimpleFigure({})".format(str(self.si))
+            
+    def draw_g_ellipses(self, cat, **kwargs):
+        draw_g_ellipses(self.ax, cat, **kwargs)
     
-    img_si = SkyImage(img_array)
-    img_si.set_auto_z_scale()
-    draw_sky_image(ax, img_si)
+    def annotate(self, cat, **kwargs):
+        annotate(self.ax, cat, **kwargs)
     
-    if mask_array is not None:
-        mask_si = SkyImage(mask_array)
-        draw_mask(ax, mask_si)
-    
-    draw_ellipse(ax, 40, 60, a=5, b=10)
-    
-    sigma = 0.1
-    draw_g_ellipse(ax, -0.5, 0.0, -0.5, 0.0, sigma)
-    draw_g_ellipse(ax, 0.5, 0.0, 0.5, 0.0, sigma)
-    draw_g_ellipse(ax, 0.0, 0.5, 0.0, 0.5, sigma)
-    draw_g_ellipse(ax, 0.0, -0.5, 0.0, -0.5, sigma)
-    
-    
-           
-    if makefig:
-        if filepath is None:
-            plt.show()
-        else:
-            logger.info("Writing image to '{}'".format(filepath))
-            fig.savefig(filepath, bbox_inches='tight')
-        plt.close(fig)
- 
+    def show(self):
+        """Update this once we settle on a minimum matplotlib version...
+        
+        """
+        logger.info("Showing {}...".format(str(self)))
+        plt.show()
+        
+    def save_to_file(self, filepath):
+        logger.info("Saving {} to '{}'...".format(str(self), filepath))
+        self.fig.savefig(filepath, bbox_inches='tight')
+   
+
+# 
+# def plot(img_array, z1=None, z2=None, mask_array=None, ax=None, filepath=None, figsize=None, scale=1):
+#     """Wraps some of the functionality into a single convenient function 
+#     
+#     Parameters
+#     ----------
+#     img_array : numpy array
+#         A 2D numpy array containing the image
+#     mask_array : numpy array
+#         A 2D numpy array containing a boolean mask (1 means True means masked)
+#     ax : Matplotlib Axes
+#         An Axes object on which to plot the image.
+#         If given, the keywords related to the figure creation are ignored
+#     filepath : string
+#         Path to a file in which to save the figure. If Neither ax nor fielpath is specified, the figure is shown
+#         interactively.
+#     scale : float
+#         A scaling for the display of the image
+#     
+#     """
+#     
+#     if ax is None:
+#         makefig = True
+#     else:
+#         makefig = False
+#         
+#     if makefig:
+#         
+#         dpi = 72.0 
+#         figsize = float(scale) * np.array(img_array.shape)/dpi
+#         
+#         fig = plt.figure(figsize=figsize)
+#         ax = fig.add_subplot(111)
+#     
+#     img_si = SkyImage(img_array)
+#     img_si.set_auto_z_scale()
+#     draw_sky_image(ax, img_si)
+#     
+#     if mask_array is not None:
+#         mask_si = SkyImage(mask_array)
+#         draw_mask(ax, mask_si)
+#     
+#     draw_ellipse(ax, 40, 60, a=5, b=10)
+#     
+#     sigma = 0.1
+#     draw_g_ellipse(ax, -0.5, 0.0, -0.5, 0.0, sigma)
+#     draw_g_ellipse(ax, 0.5, 0.0, 0.5, 0.0, sigma)
+#     draw_g_ellipse(ax, 0.0, 0.5, 0.0, 0.5, sigma)
+#     draw_g_ellipse(ax, 0.0, -0.5, 0.0, -0.5, sigma)
+#     
+#     
+#            
+#     if makefig:
+#         if filepath is None:
+#             plt.show()
+#         else:
+#             logger.info("Writing image to '{}'".format(filepath))
+#             fig.savefig(filepath, bbox_inches='tight')
+#         plt.close(fig)
+#  
 
 
 
