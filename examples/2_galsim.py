@@ -9,6 +9,17 @@ logging.basicConfig(format='%(levelname)s: %(name)s(%(funcName)s): %(message)s',
 
 import f2n
 
+
+
+
+
+
+
+
+
+
+
+"""
 # Read an image as a numpy array
 image_array = f2n.read_fits("example.fits")
 # And generate some tiny catalog (could also be an astropy table)
@@ -24,4 +35,4 @@ sf.annotate(catalog, text="({row[x]}, {row[y]})", color="white", fontsize=14) # 
 
 sf.show()
 #sf.save_to_file("test.png")
-
+"""
