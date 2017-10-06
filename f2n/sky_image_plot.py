@@ -22,8 +22,8 @@ This file is a standalone Euclid-agnostic module to visualize and plot sky image
 To visualize Euclid objects, use the wrappers in she_image_checkplot.py
 
 """ 
-from __future__ import division, print_function
-from future_builtins import *
+#from __future__ import division, print_function
+#from future_builtins import *
 
 import os
 import numpy as np

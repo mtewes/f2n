@@ -104,6 +104,7 @@ ENV/
 .cproject
 .project
 .pydevproject
+.settings
 
 
 
