@@ -1,7 +1,10 @@
 f2n v2: FITS to net, in python 3
 ================================
 
-The purpose of the tiny ``f2n`` module is to turn FITS images (or numpy arrays) into (potentially annotated) web-friendly images (typically png or pdf if you want vector-graphics annotations) in a modular and flexible way.
+The purpose of the tiny ``f2n`` module is to turn FITS images (or numpy arrays) into (potentially annotated) web-friendly images (typically png, but also svg or pdf if you want vector-graphics) in a modular and flexible way.
+
+ What a strange idea to use a software like SExtractor without f2n!
+    (Anonymous) 
 
 The present code is an attempt, under construction, to replace some of the (ridiculously useful) functionality of my previous `f2n.py module <https://obswww.unige.ch/~tewes/f2n_dot_py/>`_, porting it to a recent python environment with astropy and matplotlib. This new f2n will have a different and improved API, and should also have a much better coding style and bring new features.
 
