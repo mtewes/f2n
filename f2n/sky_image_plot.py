@@ -185,6 +185,10 @@ def draw_g_ellipses(ax, cat, x="x", y="y", g1="g1", g2="g2", sigma="sigma", **kw
     
     """
     for row in cat:
+        # We skip silently any masked positions
+        if getattr(row[x], "mask", False) or getattr(row[y], "mask", False):
+            continue
+        
         draw_g_ellipse(ax, row[x], row[y], row[g1], row[g2], row[sigma], **kwargs)
     
 
@@ -193,15 +197,19 @@ def annotate(ax, cat, x="x", y="y", text="Hello", **kwargs):
     
     """
     
-    annotate_kwargs = {"horizontalalignment":"left", "verticalalignment":"top", "color":"red"}
+    annotate_kwargs = {"horizontalalignment":"left", "verticalalignment":"top", "color":"red",
+                       "xytext":(0, 0), "textcoords":'offset points'}
     annotate_kwargs.update(**kwargs)
     
-    for row in cat:        
+    for row in cat:
+        
+        # We skip silently any masked positions
+        if getattr(row[x], "mask", False) or getattr(row[y], "mask", False):
+            continue
+        
         rowtext = text.format(row=row)
         ax.annotate(rowtext,
             xy=(row[x], row[y]),
-            xytext=(0, 0),
-            textcoords='offset points',
             **annotate_kwargs
             )
 
