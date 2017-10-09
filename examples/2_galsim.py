@@ -1,6 +1,5 @@
 # The following two lines let this script find f2n, even if f2n has not yet been installed.
 import sys, os
-from galsim.wfirst import jitter_rms
 sys.path.insert(0, os.path.abspath('../'))
 
 # Once f2n is installed, you can skip those and start from here.
