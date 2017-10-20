@@ -80,7 +80,8 @@ for row in catalog:
 #print(catalog)
 
 # And we visualize the grid and the measurements:
-sf = f2n.SimpleFigure(gal_image.array, z1=-3.0, z2=10.0, scale=2) # There is no "tranpose" here, as we've defined the stamps with our own convention, and consistently drawn and measured them with galsim.
+sf = f2n.SimpleFigure(gal_image.array.transpose(), z1=-3.0, z2=10.0, scale=2) # tranpose(), as GalSim works in (y, x) convention.
+sf.draw()
 sf.draw_g_ellipses(catalog, x="hsm_x", y="hsm_y", g1="hsm_g1", g2="hsm_g2", sigma="hsm_sigma", edgecolor="red")
 sf.annotate(catalog, x="hsm_x", y="hsm_y", text="g1 = {row[hsm_g1]:.2f}", color="white", xytext=(20, -10))
 sf.annotate(catalog, x="hsm_x", y="hsm_y", text="g2 = {row[hsm_g2]:.2f}", color="white", xytext=(20, -25))

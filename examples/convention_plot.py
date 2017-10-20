@@ -25,6 +25,7 @@ catalog = [
 
 # Demo of some features using the convenient SimpleFigure class:
 sf = f2n.SimpleFigure(image_array, z1=-3.0, z2=6.0, scale=100)
+sf.draw()
 sf.draw_g_ellipses(catalog, edgecolor="red") # Further kwargs are passed to the matplotlib Ellipse
 sf.annotate(catalog, text="g1 = {row[g1]:+.1f}", color="white", xytext=(20, -10))
 sf.annotate(catalog, text="g2 = {row[g2]:+.1f}", color="white", xytext=(20, -25))
