@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 class SkyImage(object):
     """Holds a pixel array
     
+    Todo : use properties for z1 z2 !
     """
     
     def __init__(self, data, z1=None, z2=None):
@@ -50,6 +51,9 @@ class SkyImage(object):
                
         self.data = data
         self.extent = get_extent(self.data)
+        self.z1 = z1
+        self.z2 = z2
+        logger.debug("SkyImage initialization with z1={} and z2={}".format(z1, z2))
         self.set_z(z1, z2)
         
         logger.info("Created {}".format(str(self)))
@@ -60,7 +64,7 @@ class SkyImage(object):
         return self.data.shape
     
     def __str__(self):
-        return "SkyImage{}".format(self.shape)
+        return "SkyImage{}[{}:{}]".format(self.shape, self.z1, self.z2)
     
 
     def set_z(self, z1, z2):
@@ -246,7 +250,9 @@ class SimpleFigure(object):
 
         """
         
-        self.si = SkyImage(img_array, z1, z2)
+        self.img_array = img_array
+        self.z1 = z1
+        self.z2 = z2
         
         self.dpi = 72
         self.figsize = float(scale) * np.array(img_array.shape)/self.dpi
@@ -259,17 +265,22 @@ class SimpleFigure(object):
         
 
     def __str__(self):
-        return "SimpleFigure({})".format(str(self.si))
+        return "SimpleFigure"#({})".format(str(self.si))
     
     def draw(self, si=None):
+        """Draw the image pixels on the axes.
+        
+        Usually you leave si to None, in which case a new SkyImage is built from what was passed to init.
+        """
         if si is None:
-            si = self.si
+            si = SkyImage(self.img_array, self.z1, self.z2)
         draw_sky_image(self.ax, si)
         self.has_been_drawn = True
     
     def check_drawn(self):
         if not self.has_been_drawn:
-            logger.warning("The SimpleFigure has not been drawn, you probably want to call draw() before showing or saving it!")
+            self.draw()
+            #logger.warning("The SimpleFigure has not been drawn, you probably want to call draw() before showing or saving it!")
         
     def draw_g_ellipses(self, cat, **kwargs):
         draw_g_ellipses(self.ax, cat, **kwargs)
@@ -284,6 +295,7 @@ class SimpleFigure(object):
         self.check_drawn()
         logger.info("Showing {}...".format(str(self)))
         plt.show()
+        
         
     def save_to_file(self, filepath):
         self.check_drawn()
