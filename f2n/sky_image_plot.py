@@ -121,7 +121,7 @@ def draw_sky_image(ax, si, **kwargs):
     
     """
     # "origin":"lower" as well as the tranpose() within the imshow arguments both combined give the right orientation
-    imshow_kwargs = {"aspect":"equal", "origin":"lower", "interpolation":"none", "cmap":matplotlib.cm.get_cmap('Greys_r')}
+    imshow_kwargs = {"aspect":"equal", "origin":"lower", "interpolation":"nearest", "cmap":matplotlib.cm.get_cmap('Greys_r')}
     imshow_kwargs.update(kwargs)
     
     return ax.imshow(si.data.transpose(), vmin=si.z1, vmax=si.z2, extent=si.extent, **imshow_kwargs)
@@ -236,7 +236,7 @@ class SimpleFigure(object):
     
     """
     
-    def __init__(self, img_array, z1=None, z2=None, scale=1):
+    def __init__(self, img_array, z1=None, z2=None, scale=1, withframe=True):
         """
 
         Parameters
@@ -253,13 +253,20 @@ class SimpleFigure(object):
         self.img_array = img_array
         self.z1 = z1
         self.z2 = z2
+        self.scale = scale
+        self.withframe = withframe
         
         self.dpi = 72
-        self.figsize = float(scale) * np.array(img_array.shape)/self.dpi
+        self.figsize = float(self.scale) * np.array(img_array.shape)/self.dpi
         
         self.fig = plt.figure(figsize=self.figsize)
-        self.ax = self.fig.add_subplot(111)
-        
+        if self.withframe is True:
+            self.ax = self.fig.add_subplot(111)
+        else:
+            self.ax = plt.Axes(self.fig, [0., 0., 1., 1.])
+            self.ax.set_axis_off()
+            self.fig.add_axes(self.ax)
+	    
         self.has_been_drawn = False
         
         
@@ -267,14 +274,14 @@ class SimpleFigure(object):
     def __str__(self):
         return "SimpleFigure"#({})".format(str(self.si))
     
-    def draw(self, si=None):
+    def draw(self, si=None, **kwargs):
         """Draw the image pixels on the axes.
         
         Usually you leave si to None, in which case a new SkyImage is built from what was passed to init.
         """
         if si is None:
             si = SkyImage(self.img_array, self.z1, self.z2)
-        draw_sky_image(self.ax, si)
+        draw_sky_image(self.ax, si, **kwargs)
         self.has_been_drawn = True
     
     def check_drawn(self):
@@ -300,7 +307,10 @@ class SimpleFigure(object):
     def save_to_file(self, filepath):
         self.check_drawn()
         logger.info("Saving {} to '{}'...".format(str(self), filepath))
-        self.fig.savefig(filepath, bbox_inches='tight')
+        if self.withframe:
+            self.fig.savefig(filepath, bbox_inches='tight')
+        else:
+            self.fig.savefig(filepath)
    
 
 
