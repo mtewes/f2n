@@ -67,19 +67,21 @@ class SkyImage(object):
         return "SkyImage{}[{}:{}]".format(self.shape, self.z1, self.z2)
     
 
-    def set_z(self, z1, z2):
+    def set_z(self, z1=None, z2=None):
         
         if z1 is None:
             self.z1 = np.min(self.data)
             logger.info("Set z1 to minimum value: {}".format(self.z1))
         else:
             self.z1 = z1
+            logger.info("Set z1 to specified value {}".format(self.z1))
         if z2 is None:
             self.z2 = np.max(self.data)
             logger.info("Set z2 to maximum value: {}".format(self.z2))
         else:
             self.z2 = z2
-        
+            logger.info("Set z2 to specified value {}".format(self.z2))
+       
         autolist = ["Auto", "auto"]
         if (self.z1 in autolist) or (self.z2 in autolist):
             self.set_auto_z_scale()
@@ -118,7 +120,7 @@ class SkyImage(object):
     def rebin(self, factor=2, method="mean"):
         """
         Rebins the array, grouping pixels in bins of factor x factor
-        method can be either "mean" or "max".
+        method can be either "mean" or "max" or "min"
         
         The extent attribute is intentionally do updated, so that any pixel positions still match after the rebinning. 
         """
@@ -140,11 +142,9 @@ class SkyImage(object):
         newshape = newshape.astype(int)
         if method == "mean":
             self.data = rebin(self.data, newshape) # we call the rebin function defined below
-        elif method == "max":
-            logger.info("Getting the max value of each bin...")
-            self.data = remax(self.data, newshape)
         else:
-            raise ValueError("Unknown rebin method '{}'".format(method))
+            logger.info("Getting the '{}' value of each bin...".format(method))
+            self.data = rebin_fct(self.data, newshape, fct=method)
 
 
 
@@ -421,9 +421,10 @@ def rebin(a, newshape):
     return eval(''.join(evList))
 
 
-def remax(a, newshape):
-    """Auxiliary function to "rebin" an array while always keeping the maximum pixel value of each
+def rebin_fct(a, newshape, fct="max"):
+    """Auxiliary function to "rebin" an array while always keeping the "fct" pixel value of each
     bin, instead of the mean.
+    fct can be "max", or "min"
     """
     
     shape = a.shape
@@ -433,8 +434,9 @@ def remax(a, newshape):
     
     evList = ['a.reshape('] + \
                  ['newshape[{}],factor[{}],'.format(i,i) for i in range(lenshape)] + \
-                 [')'] + ['.max({})'.format(i+1) for i in range(lenshape)]
+                 [')'] + ['.{}({})'.format(fct, i+1) for i in range(lenshape)]
 
+    #print(''.join(evList))
     return eval(''.join(evList))
     
-    
+
