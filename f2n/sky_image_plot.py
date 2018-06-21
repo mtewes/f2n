@@ -119,6 +119,8 @@ class SkyImage(object):
         """
         Rebins the array, grouping pixels in bins of factor x factor
         method can be either "mean" or "max".
+        
+        The extent attribute is intentionally do updated, so that any pixel positions still match after the rebinning. 
         """
         if int(factor) <= 1:
             raise ValueError("Can only rebin with an integer factor > 1.")
