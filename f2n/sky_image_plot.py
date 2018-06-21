@@ -113,6 +113,37 @@ class SkyImage(object):
         self.z2 = np.max(stata)
         
         logger.info("Set automatic zscale from {} to {}".format(self.z1, self.z2))
+        
+
+    def rebin(self, factor=2, method="mean"):
+        """
+        Rebins the array, grouping pixels in bins of factor x factor
+        method can be either "mean" or "max".
+        """
+        if int(factor) <= 1:
+            raise ValueError("Can only rebin with an integer factor > 1.")
+		
+        origshape = np.asarray(self.shape)
+        neededshape = origshape - (origshape % factor)
+        neededshape = neededshape.astype(int)
+        if not (origshape == neededshape).all():
+            raise ValueError("Rebinning would require a crop. This is not yet implemented!")
+            #if self.verbose :
+            #    print "Rebinning %ix%i : I have to crop from %s to %s" % (factor, factor, origshape, neededshape)
+            #self.crop(0, neededshape[0], 0, neededshape[1])
+        else:
+            logger.info("Rebinning {}x{}: no crop needed".format(factor, factor))
+        
+        newshape = neededshape/factor
+        newshape = newshape.astype(int)
+        if method == "mean":
+            self.data = rebin(self.data, newshape) # we call the rebin function defined below
+        elif method == "max":
+            logger.info("Getting the max value of each bin...")
+            self.data = remax(self.data, newshape)
+        else:
+            raise ValueError("Unknown rebin method '{}'".format(method))
+
 
 
 
@@ -369,3 +400,39 @@ def write_fits(a, filepath, clobber=True):
  
         
         
+def rebin(a, newshape):
+    """Auxiliary function to rebin ndarray data.
+    Source : http://www.scipy.org/Cookbook/Rebinning
+    example usage:
+    >>> a=rand(6,4); b=rebin(a,(3,2))
+    """
+    shape = a.shape
+    lenshape = len(shape)
+    factor = np.asarray(shape)/np.asarray(newshape)
+    factor = factor.astype(int)
+    
+    evList = ['a.reshape('] + \
+                 ['newshape[{}],factor[{}],'.format(i,i) for i in range(lenshape)] + \
+                 [')'] + ['.sum({})'.format(i+1) for i in range(lenshape)] + \
+                 ['/factor[{}]'.format(i) for i in range(lenshape)]
+    
+    return eval(''.join(evList))
+
+
+def remax(a, newshape):
+    """Auxiliary function to "rebin" an array while always keeping the maximum pixel value of each
+    bin, instead of the mean.
+    """
+    
+    shape = a.shape
+    lenshape = len(shape)
+    factor = np.asarray(shape)/np.asarray(newshape)
+    factor = factor.astype(int)
+    
+    evList = ['a.reshape('] + \
+                 ['newshape[{}],factor[{}],'.format(i,i) for i in range(lenshape)] + \
+                 [')'] + ['.max({})'.format(i+1) for i in range(lenshape)]
+
+    return eval(''.join(evList))
+    
+    
