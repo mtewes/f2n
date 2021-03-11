@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('../'))
 # Once f2n is installed, you can skip those and start from here.
 
 import logging
-logging.basicConfig(format='%(levelname)s: %(name)s(%(funcName)s): %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(levelname)s: %(name)s(%(funcName)s): %(message)s', level=logging.INFO)
 
 import f2n
 import numpy as np
