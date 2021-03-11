@@ -126,7 +126,7 @@ class SkyImage(object):
         """
         if int(factor) <= 1:
             raise ValueError("Can only rebin with an integer factor > 1.")
-		
+            
         origshape = np.asarray(self.shape)
         neededshape = origshape - (origshape % factor)
         neededshape = neededshape.astype(int)
@@ -197,7 +197,7 @@ def draw_ellipse(ax, x, y, a=5, b=None, angle=None, **kwargs):
     
     ellipse = matplotlib.patches.Ellipse((x, y), width=2*a, height=2*b, angle=angle, **ellipse_kwargs)
     
-    return ax.add_artist(ellipse)
+    return ax.add_patch(ellipse)
 
 def draw_g_ellipse(ax, x, y, g1, g2, sigma, **kwargs):
     """Draws an ellipse defined by the "reduced shear" following GalSim nomenclature.
@@ -265,17 +265,17 @@ def annotate(ax, cat, x="x", y="y", text="Hello", **kwargs):
 
 
 class SimpleFigure(object):
-    """A simple plot made from scratch. If you have only one image, and want one matplotlib figure, this should do it.
+    """A simple plot made from scratch. If you have only one scene, and want one matplotlib figure, this should do it.
     
     """
     
-    def __init__(self, img_array, z1=None, z2=None, scale=1, withframe=True):
+    def __init__(self, img_array=None, z1=None, z2=None, scale=1, withframe=True):
         """
 
         Parameters
         ----------
         img_array : numpy array
-            A 2D numpy array containing the image
+            A 2D numpy array containing the image. If None, the Figure can still be used for example to visualize a catalog.
 
         scale : float
             A scaling for the display of the image
@@ -290,16 +290,20 @@ class SimpleFigure(object):
         self.withframe = withframe
         
         self.dpi = 72
-        self.figsize = float(self.scale) * np.array(img_array.shape)/self.dpi
-        
-        self.fig = plt.figure(figsize=self.figsize)
+        if self.img_array is not None:
+            self.figsize = float(self.scale) * np.array(img_array.shape)/self.dpi
+            self.fig = plt.figure(figsize=self.figsize)
+        else:
+            self.figsize = None
+            self.fig = plt.figure()
+            
         if self.withframe is True:
             self.ax = self.fig.add_subplot(111)
         else:
             self.ax = plt.Axes(self.fig, [0., 0., 1., 1.])
             self.ax.set_axis_off()
             self.fig.add_axes(self.ax)
-	    
+            
         self.has_been_drawn = False
         
         
@@ -312,9 +316,13 @@ class SimpleFigure(object):
         
         Usually you leave si to None, in which case a new SkyImage is built from what was passed to init.
         """
-        if si is None:
-            si = SkyImage(self.img_array, self.z1, self.z2)
-        draw_sky_image(self.ax, si, **kwargs)
+        if self.img_array is not None:
+            if si is None:
+                si = SkyImage(self.img_array, self.z1, self.z2)
+            draw_sky_image(self.ax, si, **kwargs)
+        else: # without any image, we need/want to update the axis limits, otherwise it shows [0, 1]
+            self.ax.autoscale_view()
+            self.ax.set_aspect('equal', 'box')
         self.has_been_drawn = True
     
     def check_drawn(self):
@@ -333,7 +341,10 @@ class SimpleFigure(object):
         
         """
         self.check_drawn()
+        #self.ax.set_xlim(auto=True) # Not needed it seems
+        #self.ax.set_ylim(auto=True)
         logger.info("Showing {}...".format(str(self)))
+        plt.tight_layout()
         plt.show()
         
         
