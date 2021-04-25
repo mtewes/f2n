@@ -234,14 +234,34 @@ def draw_g_ellipses(ax, cat, x="x", y="y", g1="g1", g2="g2", sigma="sigma", **kw
         defined as (a+b)/2 of the ellipses to draw
     
     """
-    for row in cat:
-        # We skip silently any masked positions
-        if getattr(row[x], "mask", False) or getattr(row[y], "mask", False):
-            continue
-        
-        draw_g_ellipse(ax, row[x], row[y], row[g1], row[g2], row[sigma], **kwargs)
     
+    for label in [x, y, g1, g2, sigma]:
+        if label is None:
+            label = "column_label_corresponding_to_None"
+    
+    def row_is_masked(row):
+        return getattr(row[x], "mask", False) or getattr(row[y], "mask", False)
+    
+    needed_for_ellipses = set([x, y, g1, g2, sigma])
+    cat_colnames = get_colnames(cat)
+    if needed_for_ellipses.issubset(cat_colnames):
+        for row in cat:
+            # We skip silently any masked positions
+            if row_is_masked(row):
+                continue
+            draw_g_ellipse(ax, row[x], row[y], row[g1], row[g2], row[sigma], **kwargs)
 
+        
+    else: # we try to draw points, at least:
+        for row in cat:
+            # We skip silently any masked positions
+            if row_is_masked(row):
+                continue
+            draw_g_ellipse(ax, row[x], row[y], 0.0, 0.0, 10.0, linestyle=":", **kwargs)
+
+
+    
+    
 def annotate(ax, cat, x="x", y="y", text="Hello", **kwargs):
     """Annotates the positions (x, y) from a catalog
     
@@ -330,9 +350,11 @@ class SimpleFigure(object):
             self.draw()
             #logger.warning("The SimpleFigure has not been drawn, you probably want to call draw() before showing or saving it!")
         
+
+        
     def draw_g_ellipses(self, cat, **kwargs):
         draw_g_ellipses(self.ax, cat, **kwargs)
-    
+       
     def annotate(self, cat, **kwargs):
         annotate(self.ax, cat, **kwargs)
     
@@ -361,6 +383,18 @@ class SimpleFigure(object):
 
 
 # Some utility functions
+
+
+def get_colnames(t):
+    """Returns a list of column names from the table or list-of-dicts t
+    
+    """
+    try:
+        return t.colnames
+    except:
+        return t[0].keys()
+        
+
 
 def get_extent(a):
     """Defines the extent with which to plot an array a (we use the numpy convention)
